@@ -8,8 +8,14 @@ import { fileURLToPath } from "url";
 dotenv.config();
 
 // Resolve ES Module dirname
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+let __filename = "";
+let __dirname = "";
+try {
+  __filename = fileURLToPath(import.meta.url);
+  __dirname = path.dirname(__filename);
+} catch (e) {
+  // CommonJS fallback if bundled/compiled
+}
 
 const app = express();
 const PORT = 3000;
@@ -27,17 +33,26 @@ const MESSAGES_FILE = path.join(DATA_DIR, "messages.json");
 
 // Robust check to find source directory holding initial default configurations
 const getSourceFile = (filename: string): string => {
-  const possiblePaths = [
-    path.join(process.cwd(), "data", filename),
-    path.join(__dirname, "data", filename),
-    path.join(__dirname, "../data", filename),
-    path.join(__dirname, "..", "data", filename),
-    path.join(__dirname, "../../data", filename)
-  ];
+  const possiblePaths: string[] = [];
+  try {
+    possiblePaths.push(path.join(process.cwd(), "data", filename));
+  } catch (e) {}
+
+  if (__dirname) {
+    try {
+      possiblePaths.push(path.join(__dirname, "data", filename));
+      possiblePaths.push(path.join(__dirname, "../data", filename));
+      possiblePaths.push(path.join(__dirname, "..", "data", filename));
+      possiblePaths.push(path.join(__dirname, "../../data", filename));
+    } catch (e) {}
+  }
+
   for (const p of possiblePaths) {
-    if (fs.existsSync(p)) {
-      return p;
-    }
+    try {
+      if (p && fs.existsSync(p)) {
+        return p;
+      }
+    } catch (e) {}
   }
   // absolute backup path
   return path.join(process.cwd(), "data", filename);
@@ -109,18 +124,21 @@ const isAuthenticated = (req: express.Request, res: express.Response, next: expr
 // Load portfolio content
 app.get("/api/portfolio", (req, res) => {
   try {
-    if (!fs.existsSync(PORTFOLIO_FILE)) {
-      fs.writeFileSync(PORTFOLIO_FILE, JSON.stringify(defaultPortfolio, null, 2));
+    let rawData = "";
+    if (fs.existsSync(PORTFOLIO_FILE)) {
+      rawData = fs.readFileSync(PORTFOLIO_FILE, "utf-8");
+    } else if (fs.existsSync(SOURCE_PORTFOLIO_FILE)) {
+      rawData = fs.readFileSync(SOURCE_PORTFOLIO_FILE, "utf-8");
     }
-    const data = fs.readFileSync(PORTFOLIO_FILE, "utf-8");
-    res.json(JSON.parse(data));
+
+    if (rawData) {
+      res.json(JSON.parse(rawData));
+    } else {
+      res.json(defaultPortfolio);
+    }
   } catch (error: any) {
-    res.status(500).json({ 
-      error: "Failed to read portfolio data.", 
-      message: error.message, 
-      path: PORTFOLIO_FILE,
-      stack: error.stack 
-    });
+    console.error("Critical: Failed to read portfolio file, falling back to default memory copy.", error);
+    res.json(defaultPortfolio);
   }
 });
 
@@ -132,7 +150,16 @@ app.post("/api/portfolio", isAuthenticated, (req, res) => {
     if (!updatedData.aboutHeading || !updatedData.aboutText || !Array.isArray(updatedData.userProjects)) {
       return res.status(400).json({ error: "Invalid portfolio payload structure." });
     }
-    fs.writeFileSync(PORTFOLIO_FILE, JSON.stringify(updatedData, null, 2));
+    
+    // Always persist in-memory fallback
+    defaultPortfolio = updatedData;
+
+    try {
+      fs.writeFileSync(PORTFOLIO_FILE, JSON.stringify(updatedData, null, 2));
+    } catch (writeErr: any) {
+      console.warn("Could not write portfolio file under modern serverless filesystem, proceeding with in-memory instance reference:", writeErr.message);
+    }
+
     res.json({ success: true, message: "Portfolio configuration saved successfully." });
   } catch (error: any) {
     res.status(500).json({ 
