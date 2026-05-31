@@ -51,8 +51,26 @@ if (!fs.existsSync(DATA_DIR)) {
   fs.mkdirSync(DATA_DIR, { recursive: true });
 }
 
-// Initial full-fidelity portfolio dataset imported directly
-import defaultPortfolio from "./data/portfolio.json";
+// Initial full-fidelity portfolio dataset loaded robustly
+let defaultPortfolio: any = {
+  aboutHeading: "about",
+  aboutText: "Hi, I'm Chanchal Tailor — a first-year B.Tech student at MBM University. I'm passionate about web development. I love turning ideas into projects, and this portfolio is my first step. Always learning, always building.",
+  aboutLocation: "India (IST)",
+  aboutDisciplines: "Engineering, vibe coding",
+  socialEmail: "chanchaltailor404@gmail.com",
+  socialGithub: "https://github.com/chanchaltailor404-hub",
+  socialLinkedin: "https://linkedin.com/in/chanchal-tailor-5480b5388?utm_source=share_via&utm_content=profile&utm_medium=member_android",
+  userProjects: []
+};
+
+try {
+  if (fs.existsSync(SOURCE_PORTFOLIO_FILE)) {
+    const raw = fs.readFileSync(SOURCE_PORTFOLIO_FILE, "utf-8");
+    defaultPortfolio = JSON.parse(raw);
+  }
+} catch (e) {
+  console.error("Failed to read initial portfolio file:", e);
+}
 
 // Bootstrap Portfolio file if it doesn't exist
 if (!fs.existsSync(PORTFOLIO_FILE)) {
