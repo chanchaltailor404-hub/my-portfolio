@@ -106,9 +106,9 @@ export default function App() {
   const [aboutText, setAboutText] = useState("Hi, I'm Chanchal Tailor — a first-year B.Tech student at MBM University. I'm passionate about web development. I love turning ideas into projects, and this portfolio is my first step. Always learning, always building.");
   const [aboutLocation, setAboutLocation] = useState("India (IST)");
   const [aboutDisciplines, setAboutDisciplines] = useState("Engineering, vibe coding");
-  const [socialEmail, setSocialEmail] = useState("urmiraka2005@gmail.com");
-  const [socialGithub, setSocialGithub] = useState("https://github.com/urmiraka2005");
-  const [socialLinkedin, setSocialLinkedin] = useState("https://linkedin.com/in/chanchal-tailor");
+  const [socialEmail, setSocialEmail] = useState("chanchaltailor404@gmail.com");
+  const [socialGithub, setSocialGithub] = useState("https://github.com/chanchaltailor404-hub");
+  const [socialLinkedin, setSocialLinkedin] = useState("https://linkedin.com/in/chanchal-tailor-5480b5388?utm_source=share_via&utm_content=profile&utm_medium=member_android");
 
   const [userProjects, setUserProjects] = useState<Project[]>([
     {
@@ -313,9 +313,9 @@ export default function App() {
       .then((data) => {
         if (data.success && data.token) {
           localStorage.setItem("portfolio_token", data.token);
-          localStorage.setItem("portfolio_admin_email", data.email || "urmiraka2005@gmail.com");
+          localStorage.setItem("portfolio_admin_email", data.email || "chanchaltailor404@gmail.com");
           setAuthToken(data.token);
-          setAdminEmail(data.email || "urmiraka2005@gmail.com");
+          setAdminEmail(data.email || "chanchaltailor404@gmail.com");
           setIsLoginModalOpen(false);
           setLoginPasscode("");
           setLoginEmail("");
@@ -1605,7 +1605,7 @@ export default function App() {
                     required
                     value={loginEmail}
                     onChange={(e) => setLoginEmail(e.target.value)}
-                    placeholder="urmiraka2005@gmail.com"
+                    placeholder="chanchaltailor404@gmail.com"
                     className="w-full bg-white/5 hover:bg-white/10 focus:bg-white/15 border border-white/10 focus:border-[#F094E6]/40 rounded-lg px-4 py-2.5 text-white outline-none transition-all text-sm font-mono placeholder-white/20"
                   />
                   <p className="text-[10px] text-white/30 font-mono mt-1">ONLY RECOGNIZES AUTHORIZED OWNER EMAIL</p>

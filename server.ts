@@ -37,9 +37,9 @@ const defaultPortfolio = {
   aboutText: "Hi, I'm Chanchal Tailor — a first-year B.Tech student at MBM University. I'm passionate about web development. I love turning ideas into projects, and this portfolio is my first step. Always learning, always building.",
   aboutLocation: "India (IST)",
   aboutDisciplines: "Engineering, vibe coding",
-  socialEmail: "urmiraka2005@gmail.com",
-  socialGithub: "https://github.com/urmiraka2005",
-  socialLinkedin: "https://linkedin.com/in/chanchal-tailor",
+  socialEmail: "chanchaltailor404@gmail.com",
+  socialGithub: "https://github.com/chanchaltailor404-hub",
+  socialLinkedin: "https://linkedin.com/in/chanchal-tailor-5480b5388?utm_source=share_via&utm_content=profile&utm_medium=member_android",
   userProjects: [
     {
       title: "Interactive Fluid Canvas V1",
@@ -182,9 +182,23 @@ app.delete("/api/contact/messages/:id", isAuthenticated, (req, res) => {
 // Login (Administrator Authentication)
 app.post("/api/auth/login", (req, res) => {
   const { passcode, email } = req.body;
+  
+  // Resolve current email configuration dynamically from active portfolio config
+  let currentPortfolioEmail = "chanchaltailor404@gmail.com";
+  try {
+    if (fs.existsSync(PORTFOLIO_FILE)) {
+      const parsed = JSON.parse(fs.readFileSync(PORTFOLIO_FILE, "utf-8"));
+      if (parsed && parsed.socialEmail) {
+        currentPortfolioEmail = parsed.socialEmail;
+      }
+    }
+  } catch (err) {
+    console.error("Error dynamically resolving login email:", err);
+  }
+
   // Fallback passcode 'portfolio2026' or configured in .env
   const masterPasscode = process.env.ADMIN_PASSCODE || "portfolio2026";
-  const authorizedEmail = process.env.ADMIN_EMAIL || "urmiraka2005@gmail.com";
+  const authorizedEmail = process.env.ADMIN_EMAIL || currentPortfolioEmail;
 
   // Grant access if passcode matches OR if doing a direct simulated sign-in for the owner
   const isPasscodeValid = passcode === masterPasscode;
