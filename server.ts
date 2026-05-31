@@ -1,11 +1,15 @@
 import express from "express";
 import path from "path";
 import fs from "fs";
-import { createServer as createViteServer } from "vite";
 import dotenv from "dotenv";
 import crypto from "crypto";
+import { fileURLToPath } from "url";
 
 dotenv.config();
+
+// Resolve ES Module dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = 3000;
@@ -21,10 +25,26 @@ const DATA_DIR = isVercel ? "/tmp" : path.join(process.cwd(), "data");
 const PORTFOLIO_FILE = path.join(DATA_DIR, "portfolio.json");
 const MESSAGES_FILE = path.join(DATA_DIR, "messages.json");
 
-// Root read-only source files (where the default portfolio values are/were deployed with the code)
-const SOURCE_DATA_DIR = path.join(process.cwd(), "data");
-const SOURCE_PORTFOLIO_FILE = path.join(SOURCE_DATA_DIR, "portfolio.json");
-const SOURCE_MESSAGES_FILE = path.join(SOURCE_DATA_DIR, "messages.json");
+// Robust check to find source directory holding initial default configurations
+const getSourceFile = (filename: string): string => {
+  const possiblePaths = [
+    path.join(process.cwd(), "data", filename),
+    path.join(__dirname, "data", filename),
+    path.join(__dirname, "../data", filename),
+    path.join(__dirname, "..", "data", filename),
+    path.join(__dirname, "../../data", filename)
+  ];
+  for (const p of possiblePaths) {
+    if (fs.existsSync(p)) {
+      return p;
+    }
+  }
+  // absolute backup path
+  return path.join(process.cwd(), "data", filename);
+};
+
+const SOURCE_PORTFOLIO_FILE = getSourceFile("portfolio.json");
+const SOURCE_MESSAGES_FILE = getSourceFile("messages.json");
 
 // Ensure dynamic directory exists
 if (!fs.existsSync(DATA_DIR)) {
@@ -227,6 +247,8 @@ app.post("/api/auth/logout", (req, res) => {
 // Boot application with bundler middlewares or custom static servers
 async function startServer() {
   if (process.env.NODE_ENV !== "production") {
+    // Dynamically import Vite to avoid any production environment load failures
+    const { createServer: createViteServer } = await import("vite");
     // Vite Dev Middleware Configuration
     const vite = await createViteServer({
       server: { middlewareMode: true },
@@ -236,10 +258,12 @@ async function startServer() {
   } else {
     // Production serving
     const distPath = path.join(process.cwd(), "dist");
-    app.use(express.static(distPath));
-    app.get("*", (req, res) => {
-      res.sendFile(path.join(distPath, "index.html"));
-    });
+    if (fs.existsSync(distPath)) {
+      app.use(express.static(distPath));
+      app.get("*", (req, res) => {
+        res.sendFile(path.join(distPath, "index.html"));
+      });
+    }
   }
 
   if (process.env.VERCEL !== "1") {

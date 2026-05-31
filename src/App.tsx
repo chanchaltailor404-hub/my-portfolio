@@ -9,23 +9,9 @@ import {
 } from "lucide-react";
 
 // Inline High-Fidelity SVG paths to avoid any missing external asset errors
-const InstagramIcon = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 md:w-6 md:h-6">
-    <rect width="20" height="20" x="2" y="2" rx="5" ry="5"/>
-    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
-    <line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/>
-  </svg>
-);
-
 const TwitterIcon = () => (
   <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 md:w-6 md:h-6">
     <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/>
-  </svg>
-);
-
-const PinterestIcon = () => (
-  <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 md:w-6 md:h-6">
-    <path d="M12 0C5.37 0 0 5.372 0 12c0 5.084 3.163 9.426 7.627 11.174-.105-.949-.2-2.405.042-3.441.218-.937 1.407-5.965 1.407-5.965s-.359-.719-.359-1.782c0-1.668.967-2.914 2.171-2.914 1.023 0 1.518.769 1.518 1.69 0 1.029-.655 2.568-.994 3.995-.283 1.194.599 2.169 1.777 2.169 2.133 0 3.772-2.249 3.772-5.495 0-2.873-2.064-4.882-5.011-4.882-3.414 0-5.418 2.561-5.418 5.207 0 1.031.397 2.138.893 2.738.098.119.112.224.083.345l-.333 1.36c-.053.22-.174.267-.402.161-1.499-.698-2.436-2.889-2.436-4.649 0-3.785 2.75-7.262 7.929-7.262 4.164 0 7.397 2.967 7.397 6.932 0 4.136-2.607 7.464-6.227 7.464-1.216 0-2.359-.631-2.75-1.378l-.748 2.853c-.271 1.043-1.002 2.35-1.492 3.146C9.57 23.812 10.763 24 12 24c6.63 0 12-5.373 12-12 0-6.628-5.37-12-12-12z"/>
   </svg>
 );
 
@@ -657,25 +643,27 @@ export default function App() {
             className="col-span-2 sm:col-span-1 flex flex-col items-center justify-center space-y-4 md:space-y-6 text-white"
           >
             <motion.a 
-              href="https://instagram.com" 
+              href={socialGithub.startsWith("http") ? socialGithub : `https://github.com/${socialGithub}`}
               target="_blank" 
               rel="noreferrer"
               whileHover={{ scale: 1.15, opacity: 1 }}
               className="opacity-80 transition-opacity p-2 hover:bg-white/10 rounded-full"
-              id="social-instagram"
+              id="social-github-vertical"
+              title="GitHub Profile"
             >
-              <InstagramIcon />
+              <Github className="w-5 h-5 md:w-6 md:h-6 text-white" />
             </motion.a>
             <span className="text-white/40 font-mono text-xs select-none pointer-events-none">•</span>
             <motion.a 
-              href="https://pinterest.com" 
+              href={socialLinkedin.startsWith("http") ? socialLinkedin : `https://linkedin.com/in/${socialLinkedin}`}
               target="_blank" 
               rel="noreferrer"
               whileHover={{ scale: 1.15, opacity: 1 }}
               className="opacity-80 transition-opacity p-2 hover:bg-white/10 rounded-full"
-              id="social-pinterest"
+              id="social-linkedin-vertical"
+              title="LinkedIn Profile"
             >
-              <PinterestIcon />
+              <Linkedin className="w-5 h-5 md:w-6 md:h-6 text-white" />
             </motion.a>
           </motion.div>
 
