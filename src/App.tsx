@@ -5,7 +5,7 @@ import {
   Mail, ArrowRight, X, ExternalLink, Sparkles, Check, 
   Send, Edit, Plus, Trash2, Lock, Unlock, LogOut, 
   MessageSquare, Calendar, User, Shield, AlertCircle,
-  Github, Linkedin
+  Github, Linkedin, Download, RefreshCw
 } from "lucide-react";
 
 // Inline High-Fidelity SVG paths to avoid any missing external asset errors
@@ -220,26 +220,48 @@ export default function App() {
   };
 
   const fetchPortfolioConfig = () => {
+    // Try to load cached config from local storage first for high-performance and instant persistence
+    const cached = localStorage.getItem("portfolio_local_copy");
+    if (cached) {
+      try {
+        const localData = JSON.parse(cached);
+        if (localData.aboutHeading) setAboutHeading(localData.aboutHeading);
+        if (localData.aboutText) setAboutText(localData.aboutText);
+        if (localData.aboutLocation) setAboutLocation(localData.aboutLocation);
+        if (localData.aboutDisciplines) setAboutDisciplines(localData.aboutDisciplines);
+        if (localData.socialEmail) setSocialEmail(localData.socialEmail);
+        if (localData.socialGithub) setSocialGithub(localData.socialGithub);
+        if (localData.socialLinkedin) setSocialLinkedin(localData.socialLinkedin);
+        if (Array.isArray(localData.userProjects)) {
+          setUserProjects(localData.userProjects);
+        }
+      } catch (e) {
+        console.error("Failed to parse cached portfolio copy:", e);
+      }
+    }
+
     fetch("/api/portfolio")
       .then((res) => res.json())
       .then((data) => {
         if (data) {
-          if (data.aboutHeading) setAboutHeading(data.aboutHeading);
-          if (data.aboutText) setAboutText(data.aboutText);
-          if (data.aboutLocation) setAboutLocation(data.aboutLocation);
-          if (data.aboutDisciplines) setAboutDisciplines(data.aboutDisciplines);
-          if (data.socialEmail) setSocialEmail(data.socialEmail);
-          if (data.socialGithub) setSocialGithub(data.socialGithub);
-          if (data.socialLinkedin) setSocialLinkedin(data.socialLinkedin);
+          // If we haven't modified it locally yet, fill state with backend configuration
+          if (!cached) {
+            if (data.aboutHeading) setAboutHeading(data.aboutHeading);
+            if (data.aboutText) setAboutText(data.aboutText);
+            if (data.aboutLocation) setAboutLocation(data.aboutLocation);
+            if (data.aboutDisciplines) setAboutDisciplines(data.aboutDisciplines);
+            if (data.socialEmail) setSocialEmail(data.socialEmail);
+            if (data.socialGithub) setSocialGithub(data.socialGithub);
+            if (data.socialLinkedin) setSocialLinkedin(data.socialLinkedin);
 
-          if (Array.isArray(data.userProjects)) {
-            setUserProjects(data.userProjects);
+            if (Array.isArray(data.userProjects)) {
+              setUserProjects(data.userProjects);
+            }
           }
         }
       })
       .catch((err) => {
         console.error("Error reading portfolio config:", err);
-        triggerToast("Failed to connect to remote portfolio repository.", "error");
       });
   };
 
@@ -270,6 +292,9 @@ export default function App() {
 
   // Helper function to submit updated payload to Express
   const syncPortfolioWithServer = (updatedPayload: any) => {
+    // Instantly save to local storage copy as pristine local backup
+    localStorage.setItem("portfolio_local_copy", JSON.stringify(updatedPayload));
+
     fetch("/api/portfolio", {
       method: "POST",
       headers: {
@@ -286,9 +311,38 @@ export default function App() {
         triggerToast("Portfolio changes successfully written and live!", "success");
       })
       .catch((err) => {
-        console.error("Write error:", err);
-        triggerToast("Unauthorized or failed write transmission.", "error");
+        console.log("Write to server failed or ignored:", err);
+        triggerToast("Saved locally to browser storage! Use Export Config for permanence.", "success");
       });
+  };
+
+  // Download portfolio.json for persistence on serverless hosts like Vercel
+  const downloadPortfolioJSON = () => {
+    const payload = {
+      aboutHeading,
+      aboutText,
+      aboutLocation,
+      aboutDisciplines,
+      socialEmail,
+      socialGithub,
+      socialLinkedin,
+      userProjects
+    };
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(payload, null, 2));
+    const downloadAnchor = document.createElement("a");
+    downloadAnchor.setAttribute("href", dataStr);
+    downloadAnchor.setAttribute("download", "portfolio.json");
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    downloadAnchor.remove();
+    triggerToast("portfolio.json downloaded! Place in `/data/portfolio.json` to make permanent.", "success");
+  };
+
+  const handleResetPortfolio = () => {
+    if (window.confirm("Are you sure you want to revert all local custom edits and restore the deployed configuration?")) {
+      localStorage.removeItem("portfolio_local_copy");
+      window.location.reload();
+    }
   };
 
   // Authenticate Admin
@@ -578,20 +632,44 @@ export default function App() {
       {/* 2. Top Navigation & Auth Control Header */}
       <header className="relative w-full z-20 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         
-        {/* Glowing Owner Lock Key Badge */}
-        <div className="flex items-center space-x-2.5">
+        {/* Glowing Owner Lock Key Badge & Controls */}
+        <div className="flex items-center">
           {authToken ? (
-            <motion.button
-              onClick={handleAdminLogout}
-              whileHover={{ scale: 1.03 }}
-              className="group flex items-center space-x-2 bg-pink-500/10 hover:bg-pink-500/20 border border-pink-400/30 rounded-full px-3.5 py-1.5 text-xs text-pink-300 font-mono tracking-wider focus:outline-none cursor-pointer"
-              title="Click to sign out"
-              id="admin-logout-trigger"
-            >
-              <Unlock className="w-3.5 h-3.5 text-pink-400 animate-pulse" />
-              <span>OWNER: {adminEmail}</span>
-              <LogOut className="w-3 h-3 ml-1 opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
-            </motion.button>
+            <div className="flex flex-wrap items-center gap-2">
+              <motion.button
+                onClick={handleAdminLogout}
+                whileHover={{ scale: 1.03 }}
+                className="group flex items-center space-x-2 bg-pink-500/10 hover:bg-pink-500/20 border border-pink-400/30 rounded-full px-3.5 py-1.5 text-xs text-pink-300 font-mono tracking-wider focus:outline-none cursor-pointer"
+                title="Click to sign out of admin session"
+                id="admin-logout-trigger"
+              >
+                <Unlock className="w-3.5 h-3.5 text-pink-400 animate-pulse" />
+                <span>OWNER: {adminEmail}</span>
+                <LogOut className="w-3 h-3 ml-1 opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
+              </motion.button>
+
+              <motion.button
+                onClick={downloadPortfolioJSON}
+                whileHover={{ scale: 1.03 }}
+                className="group flex items-center space-x-2 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-400/30 rounded-full px-3.5 py-1.5 text-xs text-emerald-300 font-mono tracking-wider focus:outline-none cursor-pointer"
+                title="Download your updated configuration file to deploy on GitHub/Vercel"
+                id="admin-export-trigger"
+              >
+                <Download className="w-3.5 h-3.5 text-emerald-400" />
+                <span>EXPORT portfolio.json</span>
+              </motion.button>
+
+              <motion.button
+                onClick={handleResetPortfolio}
+                whileHover={{ scale: 1.03 }}
+                className="group flex items-center space-x-2 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-400/30 rounded-full px-3.5 py-1.5 text-xs text-amber-300 font-mono tracking-wider focus:outline-none cursor-pointer"
+                title="Revert custom overrides and reload original file"
+                id="admin-revert-trigger"
+              >
+                <RefreshCw className="w-3.5 h-3.5 text-amber-400" />
+                <span>REVERT ALL OVERRIDES</span>
+              </motion.button>
+            </div>
           ) : showAdminTrigger ? (
             <motion.button
               onClick={() => setIsLoginModalOpen(true)}
