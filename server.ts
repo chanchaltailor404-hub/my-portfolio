@@ -15,11 +15,20 @@ app.use(express.json());
 const activeSessions = new Set<string>();
 
 // Data files paths
-const DATA_DIR = path.join(process.cwd(), "data");
+const isVercel = process.env.VERCEL === "1";
+
+// For Vercel Serverless environment, we must write dynamic files to /tmp
+// For local or containerized environments, we write to process.cwd()/data
+const DATA_DIR = isVercel ? "/tmp" : path.join(process.cwd(), "data");
 const PORTFOLIO_FILE = path.join(DATA_DIR, "portfolio.json");
 const MESSAGES_FILE = path.join(DATA_DIR, "messages.json");
 
-// Ensure data directory exists
+// Root read-only source files (where the default portfolio values are/were deployed with the code)
+const SOURCE_DATA_DIR = path.join(process.cwd(), "data");
+const SOURCE_PORTFOLIO_FILE = path.join(SOURCE_DATA_DIR, "portfolio.json");
+const SOURCE_MESSAGES_FILE = path.join(SOURCE_DATA_DIR, "messages.json");
+
+// Ensure dynamic directory exists
 if (!fs.existsSync(DATA_DIR)) {
   fs.mkdirSync(DATA_DIR, { recursive: true });
 }
@@ -58,12 +67,23 @@ const defaultPortfolio = {
   ]
 };
 
-// Bootstrap files if they do not exist
+// Bootstrap Portfolio file if it doesn't exist
 if (!fs.existsSync(PORTFOLIO_FILE)) {
-  fs.writeFileSync(PORTFOLIO_FILE, JSON.stringify(defaultPortfolio, null, 2));
+  if (fs.existsSync(SOURCE_PORTFOLIO_FILE)) {
+    // Copy the compiled/deployed static portfolio data to writeable location
+    fs.copyFileSync(SOURCE_PORTFOLIO_FILE, PORTFOLIO_FILE);
+  } else {
+    fs.writeFileSync(PORTFOLIO_FILE, JSON.stringify(defaultPortfolio, null, 2));
+  }
 }
+
+// Bootstrap Messages file if it doesn't exist
 if (!fs.existsSync(MESSAGES_FILE)) {
-  fs.writeFileSync(MESSAGES_FILE, JSON.stringify([], null, 2));
+  if (fs.existsSync(SOURCE_MESSAGES_FILE)) {
+    fs.copyFileSync(SOURCE_MESSAGES_FILE, MESSAGES_FILE);
+  } else {
+    fs.writeFileSync(MESSAGES_FILE, JSON.stringify([], null, 2));
+  }
 }
 
 // Helper to check standard session header
