@@ -1,0 +1,8 @@
+{
+  "name": "Remix: Chanchal Tailor Portfolio",
+  "description": "A pristine copy of Chanchal Tailor\u0027s personal developer portfolio hero section.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
