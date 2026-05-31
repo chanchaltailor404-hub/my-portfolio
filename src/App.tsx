@@ -102,15 +102,46 @@ export default function App() {
   });
 
   // Dynamic portfolio elements fetched from Express backend
-  const [aboutHeading, setAboutHeading] = useState("Modern Craftsmanship");
-  const [aboutText, setAboutText] = useState("I build clean, exceptionally responsive, and hyper-polished web products. Placing meticulous focus on typography pairings, high-impact branding layouts, and flawless motion orchestration.");
+  const [aboutHeading, setAboutHeading] = useState("about");
+  const [aboutText, setAboutText] = useState("Hi, I'm Chanchal Tailor — a first-year B.Tech student at MBM University. I'm passionate about web development. I love turning ideas into projects, and this portfolio is my first step. Always learning, always building.");
   const [aboutLocation, setAboutLocation] = useState("India (IST)");
-  const [aboutDisciplines, setAboutDisciplines] = useState("Creative Technologies / UI Engineering");
+  const [aboutDisciplines, setAboutDisciplines] = useState("Engineering, vibe coding");
   const [socialEmail, setSocialEmail] = useState("urmiraka2005@gmail.com");
   const [socialGithub, setSocialGithub] = useState("https://github.com/urmiraka2005");
   const [socialLinkedin, setSocialLinkedin] = useState("https://linkedin.com/in/chanchal-tailor");
 
-  const [userProjects, setUserProjects] = useState<Project[]>([]);
+  const [userProjects, setUserProjects] = useState<Project[]>([
+    {
+      title: "Interactive Fluid Canvas V1",
+      category: "Creative Technology",
+      year: "2026",
+      tech: "Vite / React / GLSL / Canvas",
+      description: "A high-fidelity hardware-accelerated interactive particle system with real-time mouse-interaction wave mechanics, dynamic lighting modifiers, and performance-tuned mobile viewport adaptivity.",
+      githubLink: "https://github.com/urmiraka2005/particle-fluid-canvas",
+      liveLink: "https://particle-fluid-canvas.vercel.app",
+      image: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=800&auto=format&fit=crop"
+    },
+    {
+      title: "Modular Tactile Design System",
+      category: "UI Engineering",
+      year: "2025",
+      tech: "Next.js / Tailwind CSS / Framer-Motion",
+      description: "A comprehensive organic component playground emphasizing luxurious negative space, flawless page state transitions, fluid scaling fonts, and deep-contrast dark interfaces.",
+      githubLink: "https://github.com/urmiraka2005/modular-tactile-system",
+      liveLink: "https://tactile-design-playground.vercel.app",
+      image: "https://images.unsplash.com/photo-1634017839464-5c339ebe3cb4?q=80&w=800&auto=format&fit=crop"
+    },
+    {
+      title: "Cosmic Kinetic Studio",
+      category: "Frontend Engineering",
+      year: "2026",
+      tech: "Three.js / React-Three-Fiber / Camera-Logic",
+      description: "Immersive 3D stellar orbital sandbox simulating solar system orbital physics with editable gravity multipliers, camera focal transitions, and reactive typography systems.",
+      githubLink: "https://github.com/urmiraka2005/cosmic-stellar-sandbox",
+      liveLink: "https://cosmic-stellar-sandbox.vercel.app",
+      image: "https://images.unsplash.com/photo-1633356122544-f134324a6cee?q=80&w=800&auto=format&fit=crop"
+    }
+  ]);
   const [adminMessages, setAdminMessages] = useState<Message[]>([]);
 
   // Editing UI states
