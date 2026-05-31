@@ -51,48 +51,8 @@ if (!fs.existsSync(DATA_DIR)) {
   fs.mkdirSync(DATA_DIR, { recursive: true });
 }
 
-// Initial full-fidelity portfolio dataset
-const defaultPortfolio = {
-  aboutHeading: "about",
-  aboutText: "Hi, I'm Chanchal Tailor — a first-year B.Tech student at MBM University. I'm passionate about web development. I love turning ideas into projects, and this portfolio is my first step. Always learning, always building.",
-  aboutLocation: "India (IST)",
-  aboutDisciplines: "Engineering, vibe coding",
-  socialEmail: "chanchaltailor404@gmail.com",
-  socialGithub: "https://github.com/chanchaltailor404-hub",
-  socialLinkedin: "https://linkedin.com/in/chanchal-tailor-5480b5388?utm_source=share_via&utm_content=profile&utm_medium=member_android",
-  userProjects: [
-    {
-      title: "Interactive Fluid Canvas V1",
-      category: "Creative Technology",
-      year: "2026",
-      tech: "Vite / React / GLSL / Canvas",
-      description: "A high-fidelity hardware-accelerated interactive particle system with real-time mouse-interaction wave mechanics, dynamic lighting modifiers, and performance-tuned mobile viewport adaptivity.",
-      githubLink: "https://github.com/urmiraka2005/particle-fluid-canvas",
-      liveLink: "https://particle-fluid-canvas.vercel.app",
-      image: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=800&auto=format&fit=crop"
-    },
-    {
-      title: "Modular Tactile Design System",
-      category: "UI Engineering",
-      year: "2025",
-      tech: "Next.js / Tailwind CSS / Framer-Motion",
-      description: "A comprehensive organic component playground emphasizing luxurious negative space, flawless page state transitions, fluid scaling fonts, and deep-contrast dark interfaces.",
-      githubLink: "https://github.com/urmiraka2005/modular-tactile-system",
-      liveLink: "https://tactile-design-playground.vercel.app",
-      image: "https://images.unsplash.com/photo-1634017839464-5c339ebe3cb4?q=80&w=800&auto=format&fit=crop"
-    },
-    {
-      title: "Cosmic Kinetic Studio",
-      category: "Frontend Engineering",
-      year: "2026",
-      tech: "Three.js / React-Three-Fiber / Camera-Logic",
-      description: "Immersive 3D stellar orbital sandbox simulating solar system orbital physics with editable gravity multipliers, camera focal transitions, and reactive typography systems.",
-      githubLink: "https://github.com/urmiraka2005/cosmic-stellar-sandbox",
-      liveLink: "https://cosmic-stellar-sandbox.vercel.app",
-      image: "https://images.unsplash.com/photo-1633356122544-f134324a6cee?q=80&w=800&auto=format&fit=crop"
-    }
-  ]
-};
+// Initial full-fidelity portfolio dataset imported directly
+import defaultPortfolio from "./data/portfolio.json";
 
 // Bootstrap Portfolio file if it doesn't exist
 if (!fs.existsSync(PORTFOLIO_FILE)) {
@@ -131,10 +91,18 @@ const isAuthenticated = (req: express.Request, res: express.Response, next: expr
 // Load portfolio content
 app.get("/api/portfolio", (req, res) => {
   try {
+    if (!fs.existsSync(PORTFOLIO_FILE)) {
+      fs.writeFileSync(PORTFOLIO_FILE, JSON.stringify(defaultPortfolio, null, 2));
+    }
     const data = fs.readFileSync(PORTFOLIO_FILE, "utf-8");
     res.json(JSON.parse(data));
-  } catch (error) {
-    res.status(500).json({ error: "Failed to read portfolio data." });
+  } catch (error: any) {
+    res.status(500).json({ 
+      error: "Failed to read portfolio data.", 
+      message: error.message, 
+      path: PORTFOLIO_FILE,
+      stack: error.stack 
+    });
   }
 });
 
@@ -148,8 +116,12 @@ app.post("/api/portfolio", isAuthenticated, (req, res) => {
     }
     fs.writeFileSync(PORTFOLIO_FILE, JSON.stringify(updatedData, null, 2));
     res.json({ success: true, message: "Portfolio configuration saved successfully." });
-  } catch (error) {
-    res.status(500).json({ error: "Failed to write portfolio data." });
+  } catch (error: any) {
+    res.status(500).json({ 
+      error: "Failed to write portfolio data.", 
+      message: error.message,
+      stack: error.stack 
+    });
   }
 });
 
@@ -159,6 +131,9 @@ app.post("/api/contact/message", (req, res) => {
     const { name, email, message } = req.body;
     if (!name || !email || !message) {
       return res.status(400).json({ error: "Name, email, and message are required fields." });
+    }
+    if (!fs.existsSync(MESSAGES_FILE)) {
+      fs.writeFileSync(MESSAGES_FILE, JSON.stringify([], null, 2));
     }
     const currentMessages = JSON.parse(fs.readFileSync(MESSAGES_FILE, "utf-8"));
     const newMessage = {
@@ -171,18 +146,29 @@ app.post("/api/contact/message", (req, res) => {
     currentMessages.unshift(newMessage); // Push to top
     fs.writeFileSync(MESSAGES_FILE, JSON.stringify(currentMessages, null, 2));
     res.json({ success: true, message: "Thank you. Your message has been saved." });
-  } catch (error) {
-    res.status(500).json({ error: "Failed to save contact message." });
+  } catch (error: any) {
+    res.status(500).json({ 
+      error: "Failed to save contact message.", 
+      message: error.message,
+      stack: error.stack 
+    });
   }
 });
 
 // Read contact messages (Requires Authentication)
 app.get("/api/contact/messages", isAuthenticated, (req, res) => {
   try {
+    if (!fs.existsSync(MESSAGES_FILE)) {
+      fs.writeFileSync(MESSAGES_FILE, JSON.stringify([], null, 2));
+    }
     const messages = fs.readFileSync(MESSAGES_FILE, "utf-8");
     res.json(JSON.parse(messages));
-  } catch (error) {
-    res.status(500).json({ error: "Failed to load messages." });
+  } catch (error: any) {
+    res.status(500).json({ 
+      error: "Failed to load messages.", 
+      message: error.message,
+      stack: error.stack 
+    });
   }
 });
 
@@ -190,12 +176,19 @@ app.get("/api/contact/messages", isAuthenticated, (req, res) => {
 app.delete("/api/contact/messages/:id", isAuthenticated, (req, res) => {
   try {
     const id = req.params.id;
+    if (!fs.existsSync(MESSAGES_FILE)) {
+      fs.writeFileSync(MESSAGES_FILE, JSON.stringify([], null, 2));
+    }
     const currentMessages = JSON.parse(fs.readFileSync(MESSAGES_FILE, "utf-8"));
     const filtered = currentMessages.filter((m: any) => m.id !== id);
     fs.writeFileSync(MESSAGES_FILE, JSON.stringify(filtered, null, 2));
     res.json({ success: true, message: "Message deleted successfully." });
-  } catch (error) {
-    res.status(500).json({ error: "Failed to delete message." });
+  } catch (error: any) {
+    res.status(500).json({ 
+      error: "Failed to delete message.", 
+      message: error.message,
+      stack: error.stack 
+    });
   }
 });
 
