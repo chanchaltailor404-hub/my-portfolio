@@ -74,38 +74,7 @@ const DEFAULT_SOCIAL_EMAIL = "chanchaltailor404@gmail.com";
 const DEFAULT_SOCIAL_GITHUB = "https://github.com/chanchaltailor404-hub";
 const DEFAULT_SOCIAL_LINKEDIN = "https://linkedin.com/in/chanchal-tailor-5480b5388?utm_source=share_via&utm_content=profile&utm_medium=member_android";
 
-const DEFAULT_PROJECTS: Project[] = [
-  {
-    title: "Interactive Fluid Canvas V1",
-    category: "Creative Technology",
-    year: "2026",
-    tech: "Vite / React / GLSL / Canvas",
-    description: "A high-fidelity hardware-accelerated interactive particle system with real-time mouse-interaction wave mechanics, dynamic lighting modifiers, and performance-tuned mobile viewport adaptivity.",
-    githubLink: "https://github.com/urmiraka2005/particle-fluid-canvas",
-    liveLink: "https://particle-fluid-canvas.vercel.app",
-    image: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=800&auto=format&fit=crop"
-  },
-  {
-    title: "Modular Tactile Design System",
-    category: "UI Engineering",
-    year: "2025",
-    tech: "Next.js / Tailwind CSS / Framer-Motion",
-    description: "A comprehensive organic component playground emphasizing luxurious negative space, flawless page state transitions, fluid scaling fonts, and deep-contrast dark interfaces.",
-    githubLink: "https://github.com/urmiraka2005/modular-tactile-system",
-    liveLink: "https://tactile-design-playground.vercel.app",
-    image: "https://images.unsplash.com/photo-1634017839464-5c339ebe3cb4?q=80&w=800&auto=format&fit=crop"
-  },
-  {
-    title: "Cosmic Kinetic Studio",
-    category: "Frontend Engineering",
-    year: "2026",
-    tech: "Three.js / React-Three-Fiber / Camera-Logic",
-    description: "Immersive 3D stellar orbital sandbox simulating solar system orbital physics with editable gravity multipliers, camera focal transitions, and reactive typography systems.",
-    githubLink: "https://github.com/urmiraka2005/cosmic-stellar-sandbox",
-    liveLink: "https://cosmic-stellar-sandbox.vercel.app",
-    image: "https://images.unsplash.com/photo-1633356122544-f134324a6cee?q=80&w=800&auto=format&fit=crop"
-  }
-];
+const DEFAULT_PROJECTS: Project[] = [];
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<string | null>(null);
