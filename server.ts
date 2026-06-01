@@ -87,23 +87,32 @@ try {
   console.error("Failed to read initial portfolio file:", e);
 }
 
-// Bootstrap Portfolio file if it doesn't exist
-if (!fs.existsSync(PORTFOLIO_FILE)) {
-  if (fs.existsSync(SOURCE_PORTFOLIO_FILE)) {
-    // Copy the compiled/deployed static portfolio data to writeable location
-    fs.copyFileSync(SOURCE_PORTFOLIO_FILE, PORTFOLIO_FILE);
-  } else {
-    fs.writeFileSync(PORTFOLIO_FILE, JSON.stringify(defaultPortfolio, null, 2));
+try {
+  // Ensure dynamic directory exists
+  if (!fs.existsSync(DATA_DIR)) {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
   }
-}
 
-// Bootstrap Messages file if it doesn't exist
-if (!fs.existsSync(MESSAGES_FILE)) {
-  if (fs.existsSync(SOURCE_MESSAGES_FILE)) {
-    fs.copyFileSync(SOURCE_MESSAGES_FILE, MESSAGES_FILE);
-  } else {
-    fs.writeFileSync(MESSAGES_FILE, JSON.stringify([], null, 2));
+  // Bootstrap Portfolio file if it doesn't exist
+  if (!fs.existsSync(PORTFOLIO_FILE)) {
+    if (SOURCE_PORTFOLIO_FILE && fs.existsSync(SOURCE_PORTFOLIO_FILE)) {
+      // Copy the compiled/deployed static portfolio data to writeable location
+      fs.copyFileSync(SOURCE_PORTFOLIO_FILE, PORTFOLIO_FILE);
+    } else {
+      fs.writeFileSync(PORTFOLIO_FILE, JSON.stringify(defaultPortfolio, null, 2));
+    }
   }
+
+  // Bootstrap Messages file if it doesn't exist
+  if (!fs.existsSync(MESSAGES_FILE)) {
+    if (SOURCE_MESSAGES_FILE && fs.existsSync(SOURCE_MESSAGES_FILE)) {
+      fs.copyFileSync(SOURCE_MESSAGES_FILE, MESSAGES_FILE);
+    } else {
+      fs.writeFileSync(MESSAGES_FILE, JSON.stringify([], null, 2));
+    }
+  }
+} catch (fsBootError: any) {
+  console.warn("Non-fatal filesystem bootstrapper alert:", fsBootError.message);
 }
 
 // Session store in-memory (token strings mapped to expiry)
@@ -119,10 +128,11 @@ const isAuthenticated = (req: express.Request, res: express.Response, next: expr
   }
 };
 
-// -- API ENDPOINTS --
+// -- API ENDPOINTS ROUTER --
+const apiRouter = express.Router();
 
 // Load portfolio content
-app.get("/api/portfolio", (req, res) => {
+apiRouter.get("/portfolio", (req, res) => {
   try {
     let rawData = "";
     if (fs.existsSync(PORTFOLIO_FILE)) {
@@ -143,7 +153,7 @@ app.get("/api/portfolio", (req, res) => {
 });
 
 // Update portfolio content (Requires Authentication)
-app.post("/api/portfolio", isAuthenticated, (req, res) => {
+apiRouter.post("/portfolio", isAuthenticated, (req, res) => {
   try {
     const updatedData = req.body;
     // Basic validation of fields
@@ -171,16 +181,28 @@ app.post("/api/portfolio", isAuthenticated, (req, res) => {
 });
 
 // Submit contact request (Public)
-app.post("/api/contact/message", (req, res) => {
+apiRouter.post("/contact/message", (req, res) => {
   try {
     const { name, email, message } = req.body;
     if (!name || !email || !message) {
       return res.status(400).json({ error: "Name, email, and message are required fields." });
     }
     if (!fs.existsSync(MESSAGES_FILE)) {
-      fs.writeFileSync(MESSAGES_FILE, JSON.stringify([], null, 2));
+      try {
+        fs.writeFileSync(MESSAGES_FILE, JSON.stringify([], null, 2));
+      } catch (e: any) {
+        console.warn("FS warning:", e.message);
+      }
     }
-    const currentMessages = JSON.parse(fs.readFileSync(MESSAGES_FILE, "utf-8"));
+    let currentMessages: any[] = [];
+    try {
+      if (fs.existsSync(MESSAGES_FILE)) {
+        currentMessages = JSON.parse(fs.readFileSync(MESSAGES_FILE, "utf-8"));
+      }
+    } catch (e) {
+      console.error("Failed to parse messages file:", e);
+    }
+
     const newMessage = {
       id: crypto.randomUUID().toString(),
       name,
@@ -189,7 +211,13 @@ app.post("/api/contact/message", (req, res) => {
       timestamp: new Date().toISOString()
     };
     currentMessages.unshift(newMessage); // Push to top
-    fs.writeFileSync(MESSAGES_FILE, JSON.stringify(currentMessages, null, 2));
+
+    try {
+      fs.writeFileSync(MESSAGES_FILE, JSON.stringify(currentMessages, null, 2));
+    } catch (writeErr: any) {
+      console.warn("Messages save filesystem notice:", writeErr.message);
+    }
+
     res.json({ success: true, message: "Thank you. Your message has been saved." });
   } catch (error: any) {
     res.status(500).json({ 
@@ -201,12 +229,17 @@ app.post("/api/contact/message", (req, res) => {
 });
 
 // Read contact messages (Requires Authentication)
-app.get("/api/contact/messages", isAuthenticated, (req, res) => {
+apiRouter.get("/contact/messages", isAuthenticated, (req, res) => {
   try {
     if (!fs.existsSync(MESSAGES_FILE)) {
-      fs.writeFileSync(MESSAGES_FILE, JSON.stringify([], null, 2));
+      try {
+        fs.writeFileSync(MESSAGES_FILE, JSON.stringify([], null, 2));
+      } catch (e) {}
     }
-    const messages = fs.readFileSync(MESSAGES_FILE, "utf-8");
+    let messages = "[]";
+    if (fs.existsSync(MESSAGES_FILE)) {
+      messages = fs.readFileSync(MESSAGES_FILE, "utf-8");
+    }
     res.json(JSON.parse(messages));
   } catch (error: any) {
     res.status(500).json({ 
@@ -218,15 +251,27 @@ app.get("/api/contact/messages", isAuthenticated, (req, res) => {
 });
 
 // Delete contact message (Requires Authentication)
-app.delete("/api/contact/messages/:id", isAuthenticated, (req, res) => {
+apiRouter.delete("/contact/messages/:id", isAuthenticated, (req, res) => {
   try {
     const id = req.params.id;
     if (!fs.existsSync(MESSAGES_FILE)) {
-      fs.writeFileSync(MESSAGES_FILE, JSON.stringify([], null, 2));
+      try {
+        fs.writeFileSync(MESSAGES_FILE, JSON.stringify([], null, 2));
+      } catch (e) {}
     }
-    const currentMessages = JSON.parse(fs.readFileSync(MESSAGES_FILE, "utf-8"));
+    let currentMessages: any[] = [];
+    try {
+      if (fs.existsSync(MESSAGES_FILE)) {
+        currentMessages = JSON.parse(fs.readFileSync(MESSAGES_FILE, "utf-8"));
+      }
+    } catch (e) {}
+
     const filtered = currentMessages.filter((m: any) => m.id !== id);
-    fs.writeFileSync(MESSAGES_FILE, JSON.stringify(filtered, null, 2));
+
+    try {
+      fs.writeFileSync(MESSAGES_FILE, JSON.stringify(filtered, null, 2));
+    } catch (e) {}
+
     res.json({ success: true, message: "Message deleted successfully." });
   } catch (error: any) {
     res.status(500).json({ 
@@ -238,7 +283,7 @@ app.delete("/api/contact/messages/:id", isAuthenticated, (req, res) => {
 });
 
 // Login (Administrator Authentication)
-app.post("/api/auth/login", (req, res) => {
+apiRouter.post("/auth/login", (req, res) => {
   const { passcode, email } = req.body;
   
   // Resolve current email configuration dynamically from active portfolio config
@@ -273,7 +318,7 @@ app.post("/api/auth/login", (req, res) => {
 });
 
 // Logout
-app.post("/api/auth/logout", (req, res) => {
+apiRouter.post("/auth/logout", (req, res) => {
   const authHeader = req.headers.authorization;
   if (authHeader) {
     const token = authHeader.replace("Bearer ", "");
@@ -281,6 +326,10 @@ app.post("/api/auth/logout", (req, res) => {
   }
   res.json({ success: true, message: "Logged out successfully." });
 });
+
+// Mount the router both with and without /api prefix to cover Vercel URL rewrite behaviors
+app.use("/api", apiRouter);
+app.use("/", apiRouter);
 
 // Boot application with bundler middlewares or custom static servers
 async function startServer() {
