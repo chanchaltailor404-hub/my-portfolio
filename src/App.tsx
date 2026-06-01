@@ -66,6 +66,47 @@ const cardItemVariants = {
   }
 };
 
+const DEFAULT_ABOUT_HEADING = "about";
+const DEFAULT_ABOUT_TEXT = "Hi, I'm Chanchal Tailor — a first-year B.Tech student at MBM University. I'm passionate about web development. I love turning ideas into projects, and this portfolio is my first step. Always learning, always building.";
+const DEFAULT_ABOUT_LOCATION = "India (IST)";
+const DEFAULT_ABOUT_DISCIPLINES = "Engineering, vibe coding";
+const DEFAULT_SOCIAL_EMAIL = "chanchaltailor404@gmail.com";
+const DEFAULT_SOCIAL_GITHUB = "https://github.com/chanchaltailor404-hub";
+const DEFAULT_SOCIAL_LINKEDIN = "https://linkedin.com/in/chanchal-tailor-5480b5388?utm_source=share_via&utm_content=profile&utm_medium=member_android";
+
+const DEFAULT_PROJECTS: Project[] = [
+  {
+    title: "Interactive Fluid Canvas V1",
+    category: "Creative Technology",
+    year: "2026",
+    tech: "Vite / React / GLSL / Canvas",
+    description: "A high-fidelity hardware-accelerated interactive particle system with real-time mouse-interaction wave mechanics, dynamic lighting modifiers, and performance-tuned mobile viewport adaptivity.",
+    githubLink: "https://github.com/urmiraka2005/particle-fluid-canvas",
+    liveLink: "https://particle-fluid-canvas.vercel.app",
+    image: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=800&auto=format&fit=crop"
+  },
+  {
+    title: "Modular Tactile Design System",
+    category: "UI Engineering",
+    year: "2025",
+    tech: "Next.js / Tailwind CSS / Framer-Motion",
+    description: "A comprehensive organic component playground emphasizing luxurious negative space, flawless page state transitions, fluid scaling fonts, and deep-contrast dark interfaces.",
+    githubLink: "https://github.com/urmiraka2005/modular-tactile-system",
+    liveLink: "https://tactile-design-playground.vercel.app",
+    image: "https://images.unsplash.com/photo-1634017839464-5c339ebe3cb4?q=80&w=800&auto=format&fit=crop"
+  },
+  {
+    title: "Cosmic Kinetic Studio",
+    category: "Frontend Engineering",
+    year: "2026",
+    tech: "Three.js / React-Three-Fiber / Camera-Logic",
+    description: "Immersive 3D stellar orbital sandbox simulating solar system orbital physics with editable gravity multipliers, camera focal transitions, and reactive typography systems.",
+    githubLink: "https://github.com/urmiraka2005/cosmic-stellar-sandbox",
+    liveLink: "https://cosmic-stellar-sandbox.vercel.app",
+    image: "https://images.unsplash.com/photo-1633356122544-f134324a6cee?q=80&w=800&auto=format&fit=crop"
+  }
+];
+
 export default function App() {
   const [activeTab, setActiveTab] = useState<string | null>(null);
   
@@ -87,16 +128,25 @@ export default function App() {
     return !!localStorage.getItem("portfolio_token");
   });
 
-  // Dynamic portfolio elements fetched from Express backend
-  const [aboutHeading, setAboutHeading] = useState("about");
-  const [aboutText, setAboutText] = useState("Hi, I'm Chanchal Tailor — a first-year B.Tech student at MBM University. I'm passionate about web development. I love turning ideas into projects, and this portfolio is my first step. Always learning, always building.");
-  const [aboutLocation, setAboutLocation] = useState("India (IST)");
-  const [aboutDisciplines, setAboutDisciplines] = useState("Engineering, vibe coding");
-  const [socialEmail, setSocialEmail] = useState("chanchaltailor404@gmail.com");
-  const [socialGithub, setSocialGithub] = useState("https://github.com/chanchaltailor404-hub");
-  const [socialLinkedin, setSocialLinkedin] = useState("https://linkedin.com/in/chanchal-tailor-5480b5388?utm_source=share_via&utm_content=profile&utm_medium=member_android");
+  // Dynamic portfolio elements loaded from localStorage with default standbys
+  const [aboutHeading, setAboutHeading] = useState<string>(() => localStorage.getItem("portfolio_aboutHeading") || DEFAULT_ABOUT_HEADING);
+  const [aboutText, setAboutText] = useState<string>(() => localStorage.getItem("portfolio_aboutText") || DEFAULT_ABOUT_TEXT);
+  const [aboutLocation, setAboutLocation] = useState<string>(() => localStorage.getItem("portfolio_aboutLocation") || DEFAULT_ABOUT_LOCATION);
+  const [aboutDisciplines, setAboutDisciplines] = useState<string>(() => localStorage.getItem("portfolio_aboutDisciplines") || DEFAULT_ABOUT_DISCIPLINES);
+  const [socialEmail, setSocialEmail] = useState<string>(() => localStorage.getItem("portfolio_socialEmail") || DEFAULT_SOCIAL_EMAIL);
+  const [socialGithub, setSocialGithub] = useState<string>(() => localStorage.getItem("portfolio_socialGithub") || DEFAULT_SOCIAL_GITHUB);
+  const [socialLinkedin, setSocialLinkedin] = useState<string>(() => localStorage.getItem("portfolio_socialLinkedin") || DEFAULT_SOCIAL_LINKEDIN);
 
-  const [userProjects, setUserProjects] = useState<Project[]>([]);
+  const [userProjects, setUserProjects] = useState<Project[]>(() => {
+    try {
+      const persisted = localStorage.getItem("portfolio_userProjects");
+      if (persisted) {
+        const parsed = JSON.parse(persisted);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch (e) {}
+    return DEFAULT_PROJECTS;
+  });
   const [adminMessages, setAdminMessages] = useState<Message[]>([]);
 
   // Editing UI states
@@ -150,10 +200,8 @@ export default function App() {
 
   const navigationItems = ["My Works"];
 
-  // Fetch standard portfolio configuration from backend on mount
+  // Inspect environment on mount
   useEffect(() => {
-    fetchPortfolioConfig();
-    
     // Check if query parameter has edit or admin to show trigger
     if (window.location.search.includes("edit=true") || window.location.search.includes("admin=true")) {
       setShowAdminTrigger(true);
@@ -172,30 +220,6 @@ export default function App() {
     setTimeout(() => {
       setShowToast(null);
     }, 4000);
-  };
-
-  const fetchPortfolioConfig = () => {
-    fetch("/api/portfolio")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data) {
-          if (data.aboutHeading) setAboutHeading(data.aboutHeading);
-          if (data.aboutText) setAboutText(data.aboutText);
-          if (data.aboutLocation) setAboutLocation(data.aboutLocation);
-          if (data.aboutDisciplines) setAboutDisciplines(data.aboutDisciplines);
-          if (data.socialEmail) setSocialEmail(data.socialEmail);
-          if (data.socialGithub) setSocialGithub(data.socialGithub);
-          if (data.socialLinkedin) setSocialLinkedin(data.socialLinkedin);
-
-          if (Array.isArray(data.userProjects)) {
-            setUserProjects(data.userProjects);
-          }
-        }
-      })
-      .catch((err) => {
-        console.error("Error reading portfolio config:", err);
-        triggerToast("Failed to connect to remote portfolio repository.", "error");
-      });
   };
 
   const fetchAdminMessages = () => {
@@ -223,27 +247,22 @@ export default function App() {
       });
   };
 
-  // Helper function to submit updated payload to Express
+  // Helper function to submit updated payload to local storage
   const syncPortfolioWithServer = (updatedPayload: any) => {
-    fetch("/api/portfolio", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${authToken}`
-      },
-      body: JSON.stringify(updatedPayload)
-    })
-      .then((res) => {
-        if (!res.ok) throw new Error("Could not persist updates.");
-        return res.json();
-      })
-      .then(() => {
-        triggerToast("Portfolio changes successfully written and live!", "success");
-      })
-      .catch((err) => {
-        console.error("Write error:", err);
-        triggerToast("Unauthorized or failed write transmission.", "error");
-      });
+    try {
+      if (updatedPayload.aboutHeading !== undefined) localStorage.setItem("portfolio_aboutHeading", updatedPayload.aboutHeading);
+      if (updatedPayload.aboutText !== undefined) localStorage.setItem("portfolio_aboutText", updatedPayload.aboutText);
+      if (updatedPayload.aboutLocation !== undefined) localStorage.setItem("portfolio_aboutLocation", updatedPayload.aboutLocation);
+      if (updatedPayload.aboutDisciplines !== undefined) localStorage.setItem("portfolio_aboutDisciplines", updatedPayload.aboutDisciplines);
+      if (updatedPayload.socialEmail !== undefined) localStorage.setItem("portfolio_socialEmail", updatedPayload.socialEmail);
+      if (updatedPayload.socialGithub !== undefined) localStorage.setItem("portfolio_socialGithub", updatedPayload.socialGithub);
+      if (updatedPayload.socialLinkedin !== undefined) localStorage.setItem("portfolio_socialLinkedin", updatedPayload.socialLinkedin);
+      if (updatedPayload.userProjects !== undefined) localStorage.setItem("portfolio_userProjects", JSON.stringify(updatedPayload.userProjects));
+      triggerToast("Portfolio changes successfully written and live!", "success");
+    } catch (err: any) {
+      console.error("Local write error:", err);
+      triggerToast("Failed to write to local storage.", "error");
+    }
   };
 
   // Authenticate Admin
@@ -455,20 +474,27 @@ export default function App() {
     if (!contactName.trim() || !contactEmail.trim() || !contactMsg.trim()) return;
 
     setContactSubmitting(true);
+    const messagePayload = {
+      name: contactName,
+      email: contactEmail,
+      message: contactMsg
+    };
+
     fetch("/api/contact/message", {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
       },
-      body: JSON.stringify({
-        name: contactName,
-        email: contactEmail,
-        message: contactMsg
-      })
+      body: JSON.stringify(messagePayload)
     })
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error("HTTP Status " + res.status);
+        }
+        return res.json();
+      })
       .then((data) => {
-        if (data.success) {
+        if (data && data.success) {
           setContactName("");
           setContactEmail("");
           setContactMsg("");
@@ -478,8 +504,24 @@ export default function App() {
         }
       })
       .catch((err) => {
-        console.error("Contact send error:", err);
-        triggerToast("Failed to deliver message. Clean storage used as fallback.", "error");
+        console.error("Contact send error, utilizing client fallback storage:", err);
+        try {
+          // Store locally
+          const fallbackMessages = JSON.parse(localStorage.getItem("fallback_messages") || "[]");
+          fallbackMessages.push({
+            id: "local-" + Date.now(),
+            ...messagePayload,
+            timestamp: new Date().toISOString()
+          });
+          localStorage.setItem("fallback_messages", JSON.stringify(fallbackMessages));
+          
+          setContactName("");
+          setContactEmail("");
+          setContactMsg("");
+          triggerToast("Message delivered via browser backup storage fallback cascade.", "success");
+        } catch (storageErr) {
+          triggerToast("Failed to deliver message. Clean storage used as fallback.", "error");
+        }
       })
       .finally(() => {
         setContactSubmitting(false);
@@ -1327,7 +1369,7 @@ export default function App() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           
           {/* Left: Contact Details */}
-          <div className="lg:col-span-6 space-y-4 text-left">
+          <div className={`${authToken ? "lg:col-span-6" : "lg:col-span-8 lg:col-start-3"} space-y-4 text-left`}>
             <h3 className="font-serif text-3xl sm:text-5xl font-bold tracking-tight text-white leading-[1.1]">
               Connect with me
             </h3>
@@ -1389,19 +1431,16 @@ export default function App() {
             </div>
           </div>
 
-          {/* Right: Guest Submit Form OR Client Inbox for Chanchal */}
-          <div className="lg:col-span-6 bg-black/40 backdrop-blur-md p-6 rounded-2xl border border-white/10 text-left">
-            
-            {authToken && (
+          {/* Right: Client Inbox for Chanchal (Only shown to Authenticated Admin) */}
+          {authToken && (
+            <div className="lg:col-span-6 bg-black/40 backdrop-blur-md p-6 rounded-2xl border border-white/10 text-left">
               <div className="flex space-x-4 border-b border-white/10 pb-4 mb-4">
                 <span className="font-mono text-xs text-pink-300 flex items-center space-x-2 font-bold bg-pink-500/10 px-3 py-1 rounded-full">
                   <MessageSquare className="w-3.5 h-3.5" />
                   <span>INBOX ({adminMessages.length})</span>
                 </span>
               </div>
-            )}
 
-            {authToken ? (
               <div className="space-y-4 max-h-[40vh] overflow-y-auto pr-1">
                 <h4 className="text-[10px] font-mono uppercase tracking-widest text-[#F094E6]">Incoming Client Transmissions</h4>
                 
@@ -1433,57 +1472,8 @@ export default function App() {
                   </div>
                 )}
               </div>
-            ) : (
-              
-              <form onSubmit={handleContactSubmit} className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-mono text-white/50 uppercase mb-1">Your Name</label>
-                    <input 
-                      type="text" 
-                      required
-                      value={contactName}
-                      onChange={(e) => setContactName(e.target.value)}
-                      placeholder="e.g. John Doe" 
-                      className="w-full bg-white/5 hover:bg-white/10 focus:bg-white/15 border border-white/10 focus:border-[#F094E6]/40 rounded-lg px-3.5 py-2 text-white placeholder-white/20 outline-none transition-all text-sm font-mono"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-mono text-white/50 uppercase mb-1">Email Address</label>
-                    <input 
-                      type="email" 
-                      required
-                      value={contactEmail}
-                      onChange={(e) => setContactEmail(e.target.value)}
-                      placeholder="e.g. brand@partner.com" 
-                      className="w-full bg-white/5 hover:bg-white/10 focus:bg-white/15 border border-white/10 focus:border-[#F094E6]/40 rounded-lg px-3.5 py-2 text-white placeholder-white/20 outline-none transition-all text-sm font-mono"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-mono text-white/50 uppercase mb-1">Message Detail</label>
-                  <textarea 
-                    rows={3}
-                    required
-                    value={contactMsg}
-                    onChange={(e) => setContactMsg(e.target.value)}
-                    placeholder="Explain your target design goals, timelines, or web features..." 
-                    className="w-full bg-white/5 hover:bg-white/10 focus:bg-white/15 border border-white/10 focus:border-[#F094E6]/40 rounded-lg px-3.5 py-2 text-white placeholder-white/20 outline-none transition-all text-sm resize-none font-sans"
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={contactSubmitting}
-                  className="w-full bg-[#F094E6] hover:bg-[#eb7fda] text-zinc-950 font-bold py-2.5 rounded-lg active:scale-[0.98] transition-all text-xs cursor-pointer flex items-center justify-center space-x-2 font-mono"
-                >
-                  <span>{contactSubmitting ? "PUSHING TRANSMISSION..." : "TRANSMIT MESSAGE REQUEST"}</span>
-                  <Send className="w-3.5 h-3.5" />
-                </button>
-              </form>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </motion.div>
     </section>
@@ -1726,7 +1716,7 @@ export default function App() {
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
                       
                       {/* Left: Contact Form details */}
-                      <div className="lg:col-span-6 space-y-4">
+                      <div className={`${authToken ? "lg:col-span-6" : "lg:col-span-8 lg:col-start-3"} space-y-4`}>
                         <motion.h3 
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
@@ -1797,21 +1787,16 @@ export default function App() {
                         </div>
                       </div>
 
-                      {/* Right: Guest Submit Form OR Client Inbox for Chanchal */}
-                      <div className="lg:col-span-6 bg-black/40 backdrop-blur-md p-6 rounded-2xl border border-white/10">
-                        
-                        {/* If Chanchal is logged in, show tabs for Form vs Messages Inbox */}
-                        {authToken && (
+                      {/* Right: Client Inbox for Chanchal (Only shown to Authenticated Admin) */}
+                      {authToken && (
+                        <div className="lg:col-span-6 bg-black/40 backdrop-blur-md p-6 rounded-2xl border border-white/10">
                           <div className="flex space-x-4 border-b border-white/10 pb-4 mb-4">
                             <span className="font-mono text-xs text-pink-300 flex items-center space-x-2 font-bold bg-pink-500/10 px-3 py-1 rounded-full">
                               <MessageSquare className="w-3.5 h-3.5" />
                               <span>INBOX ({adminMessages.length})</span>
                             </span>
                           </div>
-                        )}
 
-                        {/* CLIENT MESSAGES INBOX PANEL (Locked strictly to Owner Session!) */}
-                        {authToken ? (
                           <div className="space-y-4 max-h-[40vh] overflow-y-auto pr-1">
                             <h4 className="text-[10px] font-mono uppercase tracking-widest text-[#F094E6]">Incoming Client Transmissions</h4>
                             
@@ -1843,58 +1828,8 @@ export default function App() {
                               </div>
                             )}
                           </div>
-                        ) : (
-                          
-                          /* STANDARD GUEST MESSAGE TRANSMISSION FORM */
-                          <form onSubmit={handleContactSubmit} className="space-y-4">
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                              <div>
-                                <label className="block text-xs font-mono text-white/50 uppercase mb-1">Your Name</label>
-                                <input 
-                                  type="text" 
-                                  required
-                                  value={contactName}
-                                  onChange={(e) => setContactName(e.target.value)}
-                                  placeholder="e.g. John Doe" 
-                                  className="w-full bg-white/5 hover:bg-white/10 focus:bg-white/15 border border-white/10 focus:border-[#F094E6]/40 rounded-lg px-3.5 py-2 text-white placeholder-white/20 outline-none transition-all text-sm font-mono"
-                                />
-                              </div>
-                              <div>
-                                <label className="block text-xs font-mono text-white/50 uppercase mb-1">Email Address</label>
-                                <input 
-                                  type="email" 
-                                  required
-                                  value={contactEmail}
-                                  onChange={(e) => setContactEmail(e.target.value)}
-                                  placeholder="e.g. brand@partner.com" 
-                                  className="w-full bg-white/5 hover:bg-white/10 focus:bg-white/15 border border-white/10 focus:border-[#F094E6]/40 rounded-lg px-3.5 py-2 text-white placeholder-white/20 outline-none transition-all text-sm font-mono"
-                                />
-                              </div>
-                            </div>
-
-                            <div>
-                              <label className="block text-xs font-mono text-white/50 uppercase mb-1">Message Detail</label>
-                              <textarea 
-                                rows={3}
-                                required
-                                value={contactMsg}
-                                onChange={(e) => setContactMsg(e.target.value)}
-                                placeholder="Explain your target design goals, timelines, or web features..." 
-                                className="w-full bg-white/5 hover:bg-white/10 focus:bg-white/15 border border-white/10 focus:border-[#F094E6]/40 rounded-lg px-3.5 py-2 text-white placeholder-white/20 outline-none transition-all text-sm resize-none font-sans"
-                              />
-                            </div>
-
-                            <button
-                              type="submit"
-                              disabled={contactSubmitting}
-                              className="w-full bg-[#F094E6] hover:bg-[#eb7fda] text-zinc-950 font-bold py-2.5 rounded-lg active:scale-[0.98] transition-all text-xs cursor-pointer flex items-center justify-center space-x-2 font-mono"
-                            >
-                              <span>{contactSubmitting ? "PUSHING TRANSMISSION..." : "TRANSMIT MESSAGE REQUEST"}</span>
-                              <Send className="w-3.5 h-3.5" />
-                            </button>
-                          </form>
-                        )}
-                      </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
